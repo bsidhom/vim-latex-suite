@@ -122,6 +122,10 @@ endif
 
 setlocal autoindent
 setlocal nosmartindent
+setlocal shiftwidth=2
+setlocal tabstop=2
+setlocal expandtab
+setlocal smarttab
 setlocal indentexpr=GetTeXIndent()
 exec 'setlocal indentkeys+=},],.,)' . substitute(g:tex_items, '^\|\(\\|\)', ',=', 'g')
 let g:tex_items = '^\s*' . g:tex_items
