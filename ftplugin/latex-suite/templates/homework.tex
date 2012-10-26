@@ -1,0 +1,61 @@
+<+	+>	!comp!	!exe!
+%        File: !comp!expand("%:p:t")!comp!
+%     Created: !comp!strftime("%a %b %d %I:00 %p %Y ").substitute(strftime('%Z'), '\<\(\w\)\(\w*\)\>\(\W\|$\)', '\1', 'g')!comp!
+%
+\documentclass[12pt,reqno]{article}
+\usepackage[T1]{fontenc}
+\usepackage[letterpaper]{geometry}
+\usepackage{amsmath,amssymb,latexsym}
+\usepackage{amsthm}
+\usepackage{fancyhdr}
+\usepackage{ifthen}
+\usepackage{forloop}
+%\IfFileExists{fitch.sty}{\usepackage{fitch}}{}
+\usepackage{paralist}
+\usepackage[pdftex]{graphicx}
+\usepackage[update,prepend]{epstopdf}
+\usepackage{color}
+\usepackage[table]{xcolor}
+\usepackage{hyperref}
+
+\definecolor{lightgray}{gray}{0.9}
+\rowcolors{1}{}{lightgray}
+
+\geometry{top=1in,bottom=1in,left=1in,right=1in,includefoot}
+
+\newcounter{thmcasenum}
+\theoremstyle{remark}
+\renewcommand{\thethmcasenum}{\textit{\roman{thmcasenum}}}
+\newtheorem{thmcase}[thmcasenum]{Case}
+
+\newcommand{\ie}{\emph{i.e.}}
+\newcommand{\eg}{\emph{e.g.}}
+\newcommand{\theauthorfirst}{Benjamin}
+\newcommand{\theauthorlast}{Sidhom}
+\newcommand{\theclass}{<+class+>}
+\newcommand{\thedate}{<+date+>}
+\newcommand{\hwnumber}{<+hwnumber+>}
+
+\hypersetup{pdfauthor={\theauthorfirst\ \theauthorlast},pdftitle={\theclass\ Homework \hwnumber}}
+
+\allowdisplaybreaks[1]
+
+\author{\theauthor}
+\title{Homework \hwnumber}
+\date{\thedate}
+
+\pagestyle{fancy}
+%\setlength{\headheight}{\ifthenelse{\value{page}=1}{24pt}{12pt}}
+\setlength{\headheight}{42pt}
+\lhead{\ifthenelse{\value{page}=1}{Homework \hwnumber \newline \newline }{HW\hwnumber}}
+\chead{}
+\rhead{\ifthenelse{\value{page}=1}{\theauthorfirst\ \theauthorlast\\ \theclass\\ \thedate}{\theauthorlast}}
+\lfoot{}
+\cfoot{}
+\rfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+\begin{document}
+<++>
+\end{document}
