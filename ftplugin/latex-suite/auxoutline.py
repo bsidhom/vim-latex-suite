@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 # Part of Latex-Suite
@@ -10,7 +10,11 @@
 import re
 import os
 import sys
-import StringIO
+if sys.version_info <= (3, 0):
+    from StringIO import StringIO
+else:
+    from io import StringIO
+
 
 # getFileContents {{{
 def getFileContents(fname):
@@ -60,8 +64,14 @@ def stripComments(contents):
 # }}}
 # getSectionLabels_Root {{{
 def getSectionLabels_Root(lineinfo, section_prefix, label_prefix, value_prefix):
-    outstr = StringIO.StringIO('')
-    pres_depth = section_prefix
+    outstr = StringIO('')
+    indent = ' ' * (2*section_prefix - 2)
+
+    # Check for cleveref
+    if re.search(r'\\newlabel{.*@cref}' , lineinfo ):
+      cleveref = True
+    else:
+      cleveref = False
 
     for line in lineinfo.splitlines():
         prev_txt = ''
@@ -72,39 +82,55 @@ def getSectionLabels_Root(lineinfo, section_prefix, label_prefix, value_prefix):
         line = line.lstrip()
 
         # we found a label!
-        m = re.search(r'\\newlabel{(%s.*?)}' % label_prefix, line)
+        m = re.search(r'\\newlabel{(%s.*?)(@cref)?}' % label_prefix, line)
         if m and not re.search(r'^tocindent-?[0-9]*$', m.group(1)):
-            # add the text (without aliascounter:) in the pre-last {} to the text
-            # which will be displayed below this label
-            n = re.search(r'\\newlabel{(%s.*?)}{{(\\relax )?(.*?)}.*{(aliascounter:)?(.*)}{.*?}}' % label_prefix, line)
-            if n:
-              # Version with hyperref
-              o = re.search(r'equation\.(.*)', n.group(5))
-              if o:
-                # Found an equation
-                prev_txt += '(' + n.group(3) + ')'
-              else:
-                o = re.search(r'AMS\.(.*)', n.group(5))
-                if o:
-                  # Found an named equation => try to find the name
-                  # After the name, there is the page number (assumed to be of the form [0-9a-zA-Z]* )
-                  p = re.search(r'\\newlabel{(%s.*?)}{{{(.*?)}}{[0-9a-zA-Z]*}' % label_prefix, line)
-                  if p:
-                    equation_number = p.group(2)
-                    prev_txt += '(' + equation_number + ')'
-                  else:
-                    prev_txt += n.group(5)
-                else:
-                  prev_txt += re.match(r'^\w*', n.group(5)).group() + '.' + n.group(3)
-            else:
-              # Version without hyperref
-              n = re.search(r'\\newlabel{(%s.*?)}{{(\\relax )?(.*)}{.*}}' % label_prefix, line)
-              prev_txt += n.group(3)
+            label = m.group(1)
 
-            if re.match( value_prefix, prev_txt):
+            if cleveref:
+              # Cleveref was detected.
+              n = re.search(r'\\newlabel{(%s.*?)@cref}{{\[(.*)\]\[.*\]\[.*\](.*)}{.*}}' % label_prefix, line)
+              if n:
+                if n.group(2) == 'equation' or n.group(2) == 'subequation':
+                  # Found an equation
+                  prev_txt += '(' + n.group(3) + ')'
+                else:
+                  # Found something different
+                  prev_txt += n.group(2) + '.' + n.group(3)
+            else:
+              # add the text (without aliascounter:) in the pre-last {} to the text
+              # which will be displayed below this label
+              n = re.search(r'\\newlabel{(%s.*?)}{{(\\relax )?(.*?)}.*{(aliascounter:)?(.*)}{.*?}}' % label_prefix, line)
+              if n:
+                # Hyperref was detected.
+                o = re.search(r'equation\.(.*)', n.group(5))
+                if o:
+                  # Found an equation
+                  prev_txt += '(' + n.group(3) + ')'
+                else:
+                  o = re.search(r'AMS\.(.*)', n.group(5))
+                  if o:
+                    # Found an named equation => try to find the name
+                    # After the name, there is the page number (assumed to be of the form [0-9a-zA-Z]* )
+                    p = re.search(r'\\newlabel{(%s.*?)}{{{(.*?)}}{[0-9a-zA-Z]*}' % label_prefix, line)
+                    if p:
+                      equation_number = p.group(2)
+                      prev_txt += '(' + equation_number + ')'
+                    else:
+                      prev_txt += n.group(5)
+                  else:
+                    prev_txt += re.match(r'^\w*', n.group(5)).group() + '.' + n.group(3)
+              else:
+                # Hyperref was not detected.
+                n = re.search(r'\\newlabel{(%s.*?)}{{(\\relax )?(.*)}{.*}}' % label_prefix, line)
+                prev_txt += n.group(3)
+
+            # Remove all curly braces in prev_txt:
+            prev_txt = re.sub(r'[{}]', '', prev_txt);
+
+            if prev_txt != "" and re.match( value_prefix, prev_txt):
                 # Print label and counter+number:
-                print >>outstr, '>%s%s' % (' '*(2*pres_depth-2), m.group(1))
-                print >>outstr, ':%s%s' % (' '*(2*pres_depth+0), prev_txt)
+                outstr.write('>%s%s\n'   % (indent, label))
+                outstr.write(':%s  %s\n' % (indent, prev_txt))
 
     return outstr.getvalue()
 # }}}
@@ -151,7 +177,7 @@ def getSectionLabels(lineinfo,
             section_name = o4.group(1)
             section_number = ''
           else:
-            print 'Unknown heading format "%s"' % sections[i]
+            print('Unknown heading format "%s"' % sections[i])
             section_name = "Unknown Name"
             section_number = "??"
           sec_heading = 2*' '*(section_prefix-1)
@@ -214,7 +240,7 @@ if __name__ == "__main__":
     else:
         prefix = ''
 
-    print main(sys.argv[1], prefix)
+    sys.stdout.write(main(sys.argv[1], prefix))
 
 
 # vim: fdm=marker
